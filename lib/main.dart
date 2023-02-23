@@ -21,7 +21,16 @@ class MyApp extends StatelessWidget {
 }
 
 class MyAppState extends ChangeNotifier {
-  var temp = 1;
+  List<String> currExpression = [];
+
+  void expressionOperation(String newChar) {
+    if (newChar == 'AC') {
+      currExpression = [];
+      evaluateExpression();
+    }
+  }
+
+  void evaluateExpression() {}
 }
 
 class MyHomePage extends StatelessWidget {
