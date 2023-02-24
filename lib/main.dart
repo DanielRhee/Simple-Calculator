@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => AppController(),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
         theme: ThemeData(
           primarySwatch: Colors.blue,
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
 class AppController extends ChangeNotifier {
   List<String> currExpression = [];
   String currExpressionString = '';
+  String currRes = '';
 
   void expressionToString() {
     //Turns expression into a string
@@ -66,7 +68,13 @@ class AppController extends ChangeNotifier {
   }
 
   void evaluateExpression() {
-    List<String> temp = shuntingYard(currExpression);
+    List<String> postfixExpression = shuntingYard(currExpression);
+    try {
+      currRes = evaluatePostfix(postfixExpression).toString();
+    } catch (e) {
+      print(e);
+      currRes = 'NaN';
+    }
   }
 }
 
@@ -79,7 +87,16 @@ class MyHomePage extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          Text(appState.currExpressionString),
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Column(
+              children: [
+                Text(appState.currExpressionString),
+                Text(appState.currRes),
+              ],
+            ),
+          ),
+          //Buttons
           const ButtonRows(buttonValues: ['π', 'e', '(', ')']),
           const ButtonRows(buttonValues: ['AC', '^', '√', '÷']),
           const ButtonRows(buttonValues: ['7', '8', '9', 'x']),

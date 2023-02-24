@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 bool isNumeric(String s) {
   //Determine if a string is numeric
@@ -8,6 +9,9 @@ bool isNumeric(String s) {
   if (s[0] == '+') {
     return false;
   }
+  /*if (s == 'π' || s == 'e') {
+    return true;
+  } */
   return double.tryParse(s) != null;
 }
 
@@ -16,10 +20,17 @@ bool isOperator(String s) {
   return (operators.contains(s));
 }
 
+bool isConstant(String s) {
+  if (s == 'π' || s == 'e') {
+    return true;
+  }
+  return false;
+}
+
 int hasHigherPrecedence(String operator1, String operator2) {
   //returns 1 if operator 1 > operator 2;
-  Set<String> firstOrder = {'(', ')'};
-  Set<String> secondOrder = {'√', '^'};
+  Set<String> firstOrder = {'(', ')', '√'};
+  Set<String> secondOrder = {'^'};
   Set<String> thirdOrder = {'x', '÷'};
   Set<String> fourthOrder = {'+', '-'};
 
@@ -52,6 +63,63 @@ int hasHigherPrecedence(String operator1, String operator2) {
     return 1;
   }
   return 0;
+}
+
+int numberParameters(String operator) {
+  final Map<String, int> parameterCount = {
+    '√': 1,
+    '^': 2,
+    'x': 2,
+    '÷': 2,
+    '+': 2,
+    '-': 2,
+  };
+  if (parameterCount.containsKey(operator)) {
+    return parameterCount[operator] as int;
+  } else {
+    return -1;
+  }
+}
+
+double getConstantVal(String s) {
+  Map<String, double> constantVal = {
+    //To 12 sigfigs
+    'π': 3.14159265359,
+    'e': 2.71828182846,
+  };
+  if (constantVal.containsKey(s)) {
+    return constantVal[s] as double;
+  } else {
+    throw "Invalid Constant";
+  }
+}
+
+double evaluateExpression(String operator, List<double> operands) {
+  if (operands.length != numberParameters(operator)) {
+    throw "Invalid parameters for given operator";
+  } else {
+    //Brute force it
+    if (operator == '√') {
+      return sqrt(operands[0]);
+    }
+    if (operator == '^') {
+      return pow(operands[0], operands[1]) as double;
+    }
+    if (operator == 'x') {
+      return operands[0] * operands[1];
+    }
+    if (operator == '÷') {
+      return operands[0] / operands[1];
+    }
+    if (operator == '+') {
+      print("hi???");
+      return operands[0] + operands[1];
+    }
+    if (operator == '-') {
+      return operands[0] - operands[1];
+    }
+  }
+  return 0.0;
 }
 
 List<String> shuntingYard(
@@ -105,7 +173,7 @@ List<String> shuntingYard(
 
   //Dart doesn't have stacks so we're using a list lol
   List<String> rpnRes = [];
-  List<String> operandStack = [];
+  List<String> operatorStack = [];
   print("------------------------------------");
 
   //Loop all the tokens adapted from https://brilliant.org/wiki/shunting-yard-algorithm/
@@ -116,46 +184,47 @@ List<String> shuntingYard(
     } else {
       //If left bracket
       if (currToken == '(') {
-        operandStack.add('(');
+        operatorStack.add('(');
       }
       //If right bracket:
       else if (currToken == ')') {
-        int currOperatorCheck = operandStack.length - 1;
-        //print(operandStack);
-        while (operandStack[currOperatorCheck] != '(') {
-          rpnRes.add(operandStack[currOperatorCheck]);
+        int currOperatorCheck = operatorStack.length - 1;
+        //print(operatortack);
+        while (operatorStack[currOperatorCheck] != '(') {
+          rpnRes.add(operatorStack[currOperatorCheck]);
           currOperatorCheck--;
-          operandStack.removeLast();
+          operatorStack.removeLast();
         }
         //Remove last bracket
-        operandStack.removeLast();
+        operatorStack.removeLast();
       }
       //Else it's an operator
       else {
         //While the top operator has greater precedence or the top operator is associattive and they're equal in precedance
         //Who the hell programmed dart's auto formatting
-        while (operandStack.isNotEmpty &&
-            (isOperator(operandStack[operandStack.length - 1]) &&
+        while (operatorStack.isNotEmpty &&
+            (isOperator(operatorStack[operatorStack.length - 1]) &&
                     (hasHigherPrecedence(
-                            operandStack[operandStack.length - 1], currToken) ==
+                            operatorStack[operatorStack.length - 1],
+                            currToken) ==
                         1) ||
-                (hasHigherPrecedence(
-                            operandStack[operandStack.length - 1], currToken) ==
+                (hasHigherPrecedence(operatorStack[operatorStack.length - 1],
+                            currToken) ==
                         0 &&
-                    ((operandStack[operandStack.length - 1] == '+' &&
+                    ((operatorStack[operatorStack.length - 1] == '+' &&
                             currToken != 'x') ||
-                        operandStack[operandStack.length - 1] == 'x')))) {
-          rpnRes.add(operandStack[operandStack.length - 1]);
-          //print("REMOVED " + operandStack[operandStack.length - 1]);
-          operandStack.removeLast();
+                        operatorStack[operatorStack.length - 1] == 'x')))) {
+          rpnRes.add(operatorStack[operatorStack.length - 1]);
+          //print("REMOVED " + operatorStack[operatorStack.length - 1]);
+          operatorStack.removeLast();
         }
-        operandStack.add(currToken);
+        operatorStack.add(currToken);
       }
     }
   }
   //Add the remainder of operators
-  for (var i = operandStack.length - 1; i >= 0; i--) {
-    rpnRes.add(operandStack[i]);
+  for (var i = operatorStack.length - 1; i >= 0; i--) {
+    rpnRes.add(operatorStack[i]);
   }
 
   //Debug postfix
@@ -167,4 +236,48 @@ List<String> shuntingYard(
   print("RPN EXPRESSION: " + debugRpnExpression);
 
   return rpnRes;
+}
+
+double evaluatePostfix(List<String> inputRPN) {
+  //Adapted from https://math.oxford.emory.edu/site/cs171/postfixExpressions/
+  List<double> numberStack = [];
+
+  for (var currToken in inputRPN) {
+    print(numberStack);
+    //Just add if it's at oken
+    if (isNumeric(currToken)) {
+      numberStack.add(double.parse(currToken));
+    } else if (isConstant(currToken)) {
+      try {
+        numberStack.add(getConstantVal(currToken));
+      } catch (e) {
+        print("INVAID CONSTANT");
+      }
+    } else {
+      //If it's not a token, get the number of argument parameters
+      int numParameters = numberParameters(currToken);
+      if (numberStack.length < numParameters) {
+        throw "Invalid NPM Expression";
+      } else {
+        List<double> operandsReversed = [];
+        for (var i = numberStack.length - 1;
+            i > numberStack.length - 1 - numParameters;
+            i--) {
+          operandsReversed.add(numberStack[i]);
+        }
+        List<double> operands = List.from(operandsReversed.reversed);
+        double calcVal = evaluateExpression(currToken, operands);
+        for (var i = 0; i < numParameters; i++) {
+          numberStack.removeLast();
+        }
+        numberStack.add(calcVal);
+      }
+    }
+  }
+  if (numberStack.length != 1) {
+    print(numberStack);
+    throw "Invalid NPM expression";
+  } else {
+    return numberStack[0];
+  }
 }
