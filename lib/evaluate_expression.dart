@@ -9,6 +9,9 @@ bool isNumeric(String s) {
   if (s[0] == '+') {
     return false;
   }
+  if (isConstant(s)) {
+    return true;
+  }
   /*if (s == 'π' || s == 'e') {
     return true;
   } */
@@ -112,7 +115,6 @@ double evaluateExpression(String operator, List<double> operands) {
       return operands[0] / operands[1];
     }
     if (operator == '+') {
-      print("hi???");
       return operands[0] + operands[1];
     }
     if (operator == '-') {
@@ -164,12 +166,12 @@ List<String> shuntingYard(
   }
 
   //Debug print
-  String debugInfixExpression = '';
+  /*String debugInfixExpression = '';
   for (var tempToken in infixExpression) {
     debugInfixExpression += tempToken;
     debugInfixExpression += '|||';
   }
-  print(debugInfixExpression);
+  print(debugInfixExpression); */
 
   //Dart doesn't have stacks so we're using a list lol
   List<String> rpnRes = [];
@@ -243,9 +245,9 @@ double evaluatePostfix(List<String> inputRPN) {
   List<double> numberStack = [];
 
   for (var currToken in inputRPN) {
-    print(numberStack);
+    //print(numberStack);
     //Just add if it's at oken
-    if (isNumeric(currToken)) {
+    if (isNumeric(currToken) && !isConstant(currToken)) {
       numberStack.add(double.parse(currToken));
     } else if (isConstant(currToken)) {
       try {
@@ -257,25 +259,28 @@ double evaluatePostfix(List<String> inputRPN) {
       //If it's not a token, get the number of argument parameters
       int numParameters = numberParameters(currToken);
       if (numberStack.length < numParameters) {
-        throw "Invalid NPM Expression";
+        throw "Invalid NPM Expression"; //Wrong number of parameters
       } else {
-        List<double> operandsReversed = [];
+        List<double> operandsReversed =
+            []; //Because the parameters go in bakcwards
         for (var i = numberStack.length - 1;
             i > numberStack.length - 1 - numParameters;
             i--) {
           operandsReversed.add(numberStack[i]);
         }
-        List<double> operands = List.from(operandsReversed.reversed);
-        double calcVal = evaluateExpression(currToken, operands);
+        List<double> operands =
+            List.from(operandsReversed.reversed); //Corrected in the right order
+        double calcVal = evaluateExpression(currToken, operands); //Calculate
         for (var i = 0; i < numParameters; i++) {
+          //Remove the parameters that were used
           numberStack.removeLast();
         }
-        numberStack.add(calcVal);
+        numberStack.add(calcVal); //Add the new parameter calculated
       }
     }
   }
   if (numberStack.length != 1) {
-    print(numberStack);
+    //print(numberStack);
     throw "Invalid NPM expression";
   } else {
     return numberStack[0];

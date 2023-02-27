@@ -27,6 +27,12 @@ class MyApp extends StatelessWidget {
 }
 
 class AppController extends ChangeNotifier {
+  //Storing history
+  List<List<String>> expressionHistory = [];
+  String expressionHistoryString = '';
+  String resultHistoryString = '';
+
+  //Active expressions
   List<String> currExpression = [];
   String currExpressionString = '';
   String currRes = '';
@@ -51,6 +57,16 @@ class AppController extends ChangeNotifier {
       if (currExpression.isNotEmpty) {
         currExpression.removeLast();
       }
+    } else if (newChar == '=') {
+      //End expression and move onto the next
+      if (expressionHistoryString != '' && resultHistoryString != '') {
+        expressionHistoryString += '\n';
+        resultHistoryString += '\n';
+      }
+      expressionHistoryString += currExpressionString;
+      resultHistoryString += currRes;
+      expressionOperation('AC', -1);
+      notifyListeners();
     } else {
       //Adding everything else
       if (index != -1) {
@@ -78,34 +94,104 @@ class AppController extends ChangeNotifier {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  bool isKeyboardOpen = false;
+  final historyScrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<AppController>();
     return Scaffold(
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              children: [
-                Text(appState.currExpressionString),
-                Text(appState.currRes),
-              ],
-            ),
+          Flexible(
+            fit: FlexFit.tight,
+            child: SingleChildScrollView(
+              controller: historyScrollController,
+              reverse: true,
+              //controller: historyScrollController,
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Row(
+                  children: [
+                    Text(appState.expressionHistoryString),
+                    Expanded(child: Container()),
+                    SelectableText(appState.resultHistoryString),
+                  ],
+                ),
+              ),
+            ), // Historic Expression Data
           ),
-          //Buttons
-          const ButtonRows(buttonValues: ['π', 'e', '(', ')']),
-          const ButtonRows(buttonValues: ['AC', '^', '√', '÷']),
-          const ButtonRows(buttonValues: ['7', '8', '9', 'x']),
-          const ButtonRows(buttonValues: ['4', '5', '6', '-']),
-          const ButtonRows(buttonValues: ['1', '2', '3', '+']),
-          const ButtonRows(buttonValues: ['0', '.', '⌫', '=']),
+
+          const Divider(
+            height: 5,
+            color: Colors.black45,
+          ),
+
+          //Flexible(fit: FlexFit.loose, child: Container()),
+
+          //Expanded(child: Container()),
+          //Keyboard opener
+          //Positioned(bottom:child: KeyboardExpansion()),
+          Column(children: [
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                children: [
+                  Text(appState.currExpressionString),
+                  Expanded(child: Container()),
+                  SelectableText(appState.currRes),
+                ],
+              ),
+            ),
+            ExpansionPanelList(
+                animationDuration: Duration(milliseconds: 300),
+                children: [
+                  ExpansionPanel(
+                    headerBuilder: (context, isExpanded) {
+                      return const ListTile(
+                        title: Text('Open Keyboard'),
+                      );
+                    },
+                    body: Column(//ListTile(
+                        children: const [
+                      ButtonRows(buttonValues: ['π', 'e', '(', ')']),
+                      ButtonRows(buttonValues: ['AC', '^', '√', '÷']),
+                      ButtonRows(buttonValues: ['7', '8', '9', 'x']),
+                      ButtonRows(buttonValues: ['4', '5', '6', '-']),
+                      ButtonRows(buttonValues: ['1', '2', '3', '+']),
+                      ButtonRows(buttonValues: ['0', '.', '⌫', '=']),
+                    ]),
+                    isExpanded: isKeyboardOpen,
+                    canTapOnHeader: true,
+                  ),
+                ],
+                dividerColor: Colors.grey,
+                expansionCallback: ((panelIndex, isExpanded) {
+                  isKeyboardOpen = !isKeyboardOpen;
+                  setState(() {});
+                })),
+          ]),
+
+          //Formatting
         ],
       ),
     );
+  }
+
+  void scrollBottomHistory() {
+    historyScrollController.animateTo(
+        historyScrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 250),
+        curve: Curves.easeIn);
   }
 }
 
@@ -127,29 +213,37 @@ class _ButtonRowsState extends State<ButtonRows> {
     var appState = context.watch<AppController>();
     return Row(
       children: [
-        ElevatedButton(
-          onPressed: () {
-            appState.expressionOperation(widget.buttonValues[0], -1);
-          },
-          child: Text(widget.buttonValues[0]),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              appState.expressionOperation(widget.buttonValues[0], -1);
+            },
+            child: Text(widget.buttonValues[0]),
+          ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            appState.expressionOperation(widget.buttonValues[1], -1);
-          },
-          child: Text(widget.buttonValues[1]),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              appState.expressionOperation(widget.buttonValues[1], -1);
+            },
+            child: Text(widget.buttonValues[1]),
+          ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            appState.expressionOperation(widget.buttonValues[2], -1);
-          },
-          child: Text(widget.buttonValues[2]),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              appState.expressionOperation(widget.buttonValues[2], -1);
+            },
+            child: Text(widget.buttonValues[2]),
+          ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            appState.expressionOperation(widget.buttonValues[3], -1);
-          },
-          child: Text(widget.buttonValues[3]),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              appState.expressionOperation(widget.buttonValues[3], -1);
+            },
+            child: Text(widget.buttonValues[3]),
+          ),
         ),
       ],
     );
