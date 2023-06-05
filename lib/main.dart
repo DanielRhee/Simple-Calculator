@@ -8,7 +8,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
+  final homePage = const MyHomePage();
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: MyHomePage(),
+        home: homePage,
       ),
     );
   }
@@ -103,7 +103,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool isKeyboardOpen = false;
-  final historyScrollController = ScrollController();
+  final scrollHistoryController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Flexible(
             fit: FlexFit.tight,
             child: SingleChildScrollView(
-              controller: historyScrollController,
+              controller: scrollHistoryController,
               reverse: true,
               //controller: historyScrollController,
               child: Padding(
@@ -135,12 +135,6 @@ class _MyHomePageState extends State<MyHomePage> {
             height: 5,
             color: Colors.black45,
           ),
-
-          //Flexible(fit: FlexFit.loose, child: Container()),
-
-          //Expanded(child: Container()),
-          //Keyboard opener
-          //Positioned(bottom:child: KeyboardExpansion()),
           Column(children: [
             Padding(
               padding: const EdgeInsets.all(10.0),
@@ -187,11 +181,22 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void scrollBottomHistory() {
-    historyScrollController.animateTo(
-        historyScrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 250),
-        curve: Curves.easeIn);
+  void scrollToBottomHistory() {
+    scrollHistoryController.addListener(() {
+      if (0 == scrollHistoryController.offset) {
+        // We've reached the bottom of the SingleChildScrollView
+        // and can stop scrolling.
+        scrollHistoryController.dispose();
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scrollHistoryController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 }
 
@@ -199,9 +204,15 @@ class ButtonRows extends StatefulWidget {
   const ButtonRows({
     super.key,
     required this.buttonValues,
+    //required this.homePagePoint,
   });
 
   final List<String> buttonValues;
+  //final _MyHomePageState homePagePoint;
+
+  void expressionOperation(String hi, int index) {
+    print('hi');
+  }
 
   @override
   State<ButtonRows> createState() => _ButtonRowsState();
@@ -216,7 +227,7 @@ class _ButtonRowsState extends State<ButtonRows> {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              appState.expressionOperation(widget.buttonValues[0], -1);
+              this.expressionOperation(widget.buttonValues[0], -1);
             },
             child: Text(widget.buttonValues[0]),
           ),
